@@ -21,9 +21,15 @@ public class MPD {
 	private static AtomicInteger mpd_volume = new AtomicInteger(0);
 	private static AtomicBoolean mpd_repeat = new AtomicBoolean(false);
 	private static AtomicBoolean mpd_random = new AtomicBoolean(false);
+	private static AtomicInteger mpd_bitrate = new AtomicInteger(0);
+	private static AtomicInteger mpd_sps = new AtomicInteger(0);
+	private static AtomicBoolean mpd_stereo = new AtomicBoolean(false);
+
 	private static AtomicReference<String> mpd_song_artist = new AtomicReference<>("Unknown");
 	private static AtomicReference<String> mpd_song_title = new AtomicReference<>("Unknown");
 	private static AtomicReference<String> mpd_song_album = new AtomicReference<>("Unknown");
+	private static AtomicReference<Double> mpd_song_elapsed = new AtomicReference<>(0.0);
+	private static AtomicReference<Double> mpd_song_duration = new AtomicReference<>(0.0);
 
 	public static void init() {
 		while (true) {
@@ -47,14 +53,28 @@ public class MPD {
 
 				while (true) {
 					send_command("idle");
+					socket.get().setSoTimeout(500);
 
-					String idle_retract_message = in.get().readLine();
-					if (idle_retract_message == null) throw new IOException("切断された");
-					if (idle_retract_message.startsWith("changed") == false) throw new IOException("なんか変なので死にまーす");
+					//500ms待つ仕組み
+					try {
+						String idle_retract_message = in.get().readLine();
+						if (idle_retract_message == null) throw new IOException("切断された");
+						if (idle_retract_message.startsWith("changed") == false) throw new IOException("なんか変なので死にまーす");
 
-					//「OK」を消費
-					in.get().readLine();
+						//「OK」を消費
+						in.get().readLine();
+					} catch (SocketTimeoutException ex) {
+						socket.get().setSoTimeout(5000);
+						send_command("noidle");
+						while (true) {
+							String read_line = in.get().readLine();
+							if (read_line == null) throw new IOException("切断された");
+							if (read_line.equals("OK")) break;
+							if (read_line.startsWith("ACK")) throw new IOException(read_line);
+						}
+					}
 
+					socket.get().setSoTimeout(0);
 
 					//同期
 					sync();
@@ -83,6 +103,54 @@ public class MPD {
 				ex.printStackTrace();
 			}
 		}
+	}
+
+	public static MPDState get_mpd_state() {
+		return mpd_state.get();
+	}
+
+	public static int get_mpd_volume() {
+		return mpd_volume.get();
+	}
+
+	public static boolean get_mpd_repeat() {
+		return mpd_repeat.get();
+	}
+
+	public static boolean get_mpd_random() {
+		return mpd_random.get();
+	}
+
+	public static int get_mpd_bitrate() {
+		return mpd_bitrate.get();
+	}
+
+	public static int get_mpd_sps() {
+		return mpd_sps.get();
+	}
+
+	public static boolean get_mpd_stereo() {
+		return mpd_stereo.get();
+	}
+
+	public static String get_mpd_song_artist() {
+		return mpd_song_artist.get();
+	}
+
+	public static String get_mpd_song_title() {
+		return mpd_song_title.get();
+	}
+
+	public static String get_mpd_song_album() {
+		return mpd_song_album.get();
+	}
+
+	public static double get_mpd_song_elapsed() {
+		return mpd_song_elapsed.get();
+	}
+
+	public static double get_mpd_song_duration() {
+		return mpd_song_duration.get();
 	}
 
 	/**
@@ -144,7 +212,7 @@ public class MPD {
 			}
 
 			case "VOLUME": {
-				mpd_volume.set(Integer.getInteger(value));
+				mpd_volume.set(Integer.parseInt(value));
 				break;
 			}
 
@@ -155,6 +223,21 @@ public class MPD {
 
 			case "RANDOM": {
 				mpd_random.set(value.equals("1"));
+				break;
+			}
+
+			case "ELAPSED": {
+				mpd_song_elapsed.set(Double.parseDouble(value));
+				break;
+			}
+
+			case "DURATION": {
+				mpd_song_duration.set(Double.parseDouble(value));
+				break;
+			}
+
+			case "BITRATE": {
+				mpd_bitrate.set(Integer.parseInt(value));
 				break;
 			}
 		}
@@ -183,6 +266,13 @@ public class MPD {
 
 			case "ALBUM": {
 				mpd_song_album.set(value);
+				break;
+			}
+
+			case "FORMAT": {
+				String[] format = value.split(":");
+				mpd_sps.set(Integer.parseInt(format[0]) / 1000);
+				mpd_stereo.set(format[2].equals("2"));
 				break;
 			}
 		}

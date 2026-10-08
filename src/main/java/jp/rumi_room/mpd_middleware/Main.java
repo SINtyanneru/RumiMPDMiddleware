@@ -15,13 +15,13 @@ public class Main {
 			public void run() {
 				MPD.init();
 			}
-		}).run();
+		}).start();
 
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				HTTPServer.init();
 			}
-		}).run();
+		}).start();
 	}
 }
