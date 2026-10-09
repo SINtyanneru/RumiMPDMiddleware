@@ -13,6 +13,21 @@ public class HTTPServer {
 	public static void init() {
 		Javalin app = Javalin.create();
 
+		app.get("/", new Handler() {
+			@Override
+			public void handle(Context ctx) throws Exception {
+				StringBuilder sb = new StringBuilder();
+				sb.append("るみのMPDミドルウェア〜\n");
+				sb.append("\n");
+				sb.append("/api/Statusでステータスを取得できます\n");
+				sb.append("/winampでWinamp風のUIで状態を見れます\n");
+
+				ctx.status(200);
+				ctx.contentType("text/plain; charset=UTF-8");
+				ctx.result(sb.toString());
+			}
+		});
+
 		app.get("/api/Status", new Handler() {
 			@Override
 			public void handle(Context ctx) throws Exception {
