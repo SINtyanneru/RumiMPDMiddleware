@@ -2,6 +2,8 @@ package jp.rumi_room.mpd_middleware;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import io.javalin.Javalin;
 import io.javalin.http.*;
@@ -55,6 +57,19 @@ public class HTTPServer {
 				ctx.status(200);
 				ctx.contentType("application/xml; charset=UTF-8");
 				ctx.result(response_body);
+			}
+		});
+
+		app.get("/winamp", new Handler() {
+			@Override
+			public void handle(Context ctx) throws Exception {
+				ctx.status(200);
+				ctx.contentType("image/png");
+				ctx.header("Cache-Control", "no-store, no-cache, must-revalidate");
+				ctx.header("Pragma", "no-cache");
+				ctx.header("Expires", "0");
+				ctx.header("Refresh", "1");
+				ctx.result(WinampLike.get_image());
 			}
 		});
 

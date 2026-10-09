@@ -205,6 +205,12 @@ public class MPD {
 						mpd_state.set(MPDState.Pause);
 						break;
 					default:
+						mpd_song_artist.set("");
+						mpd_song_title.set("");
+						mpd_song_album.set("");
+						mpd_song_elapsed.set(0.0);
+						mpd_song_duration.set(0.0);
+
 						mpd_state.set(MPDState.Unknown);
 						break;
 				}
@@ -271,7 +277,7 @@ public class MPD {
 
 			case "FORMAT": {
 				String[] format = value.split(":");
-				mpd_sps.set(Integer.parseInt(format[0]) / 1000);
+				mpd_sps.set(Integer.parseInt(format[0]));
 				mpd_stereo.set(format[2].equals("2"));
 				break;
 			}

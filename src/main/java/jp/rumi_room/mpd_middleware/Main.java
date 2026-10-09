@@ -13,6 +13,13 @@ public class Main {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
+				WinampLike.init();
+			}
+		}).start();
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
 				MPD.init();
 			}
 		}).start();
