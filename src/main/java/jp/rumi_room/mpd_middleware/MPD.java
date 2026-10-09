@@ -12,10 +12,16 @@ public class MPD {
 	private final static String MPD_HOST = "192.168.100.120";
 	private final static int MPD_PORT = 6600;
 	private final static String CRLF = "\n";
+	private final static int IDLE_TIMEOUT = 500;
+	private final static int REPLY_TIMEOUT = 5000;
+	private final static int CONNECT_RETRY_SEC = 1000;
+	private final static int CONNECT_RETRY_MAX = 5;
+	private final static int CONNECT_RETRY_MAX_AFTER_SEC = 28800;
 
 	private static Optional<Socket> socket = Optional.empty();
 	private static Optional<BufferedReader> in = Optional.empty();
 	private static Optional<BufferedWriter> out = Optional.empty();
+	private static int connect_retry_count = 0;
 
 	private static AtomicReference<MPDState> mpd_state = new AtomicReference<>(MPDState.Unknown);
 	private static AtomicInteger mpd_volume = new AtomicInteger(0);
@@ -49,11 +55,13 @@ public class MPD {
 
 				Main.logger.print(SeverityLevel.Ok, "MPDｻｰﾊﾞｰ("+MPD_HOST + ":" + MPD_PORT +")へ接続しました！");
 
+				connect_retry_count = 0;
+
 				sync();
 
 				while (true) {
 					send_command("idle");
-					socket.get().setSoTimeout(500);
+					socket.get().setSoTimeout(IDLE_TIMEOUT);
 
 					//500ms待つ仕組み
 					try {
@@ -64,7 +72,7 @@ public class MPD {
 						//「OK」を消費
 						in.get().readLine();
 					} catch (SocketTimeoutException ex) {
-						socket.get().setSoTimeout(5000);
+						socket.get().setSoTimeout(REPLY_TIMEOUT);
 						send_command("noidle");
 						while (true) {
 							String read_line = in.get().readLine();
@@ -94,8 +102,21 @@ public class MPD {
 
 				Main.logger.print(SeverityLevel.Error, "MPDｻｰﾊﾞｰ("+MPD_HOST + ":" + MPD_PORT +")へ接続できません、再試行します。");
 
+				if (connect_retry_count > CONNECT_RETRY_MAX) {
+					Main.logger.print(SeverityLevel.Error, CONNECT_RETRY_MAX_AFTER_SEC + "秒後に再試行します");
+
+					try {
+						Thread.sleep(CONNECT_RETRY_MAX_AFTER_SEC);
+						connect_retry_count += 1;
+					} catch (InterruptedException e) {
+						return;
+					}
+					continue;
+				}
+
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(CONNECT_RETRY_SEC);
+					connect_retry_count += 1;
 				} catch (InterruptedException e) {
 					return;
 				}
