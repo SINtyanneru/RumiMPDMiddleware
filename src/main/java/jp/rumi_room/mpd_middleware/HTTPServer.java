@@ -73,6 +73,6 @@ public class HTTPServer {
 			}
 		});
 
-		app.start(6601);
+		app.start("0.0.0.0", 6601);
 	}
 }
