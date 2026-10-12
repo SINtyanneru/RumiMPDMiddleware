@@ -15,15 +15,20 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+
 import javax.imageio.ImageIO;
 
 import jp.rumi_room.mpd_middleware.Type.MPDState;
 import su.rumishistem.rumi_java_logger.SeverityLevel;
 
 public class WinampLike {
-	private final static int FPS = 15;
+	public final static int FPS = 15;
+	public final static int WIDTH = 275;
+	public final static int HEIGHT = 116;
 
 	private static AtomicReference<byte[]> png = new AtomicReference<>(new byte[0]);
+	private static AtomicReference<byte[]> raw = new AtomicReference<>(new byte[0]);
 	private static BufferedImage img;
 	private static Graphics2D g;
 
@@ -48,7 +53,7 @@ public class WinampLike {
 	private static BufferedImage theme_shufrep;
 
 	public static void init() {
-		img = new BufferedImage(275, 116, BufferedImage.TYPE_INT_RGB);
+		img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
 		g = img.createGraphics();
 		g.setComposite(AlphaComposite.SrcOver);
 
@@ -95,6 +100,16 @@ public class WinampLike {
 		}, 0, TimeUnit.SECONDS.toNanos(1) / FPS, TimeUnit.NANOSECONDS);
 	}
 
+	/**
+	 * BGR並びの生データを取得します
+	 */
+	public static byte[] get_raw_image() {
+		return raw.get();
+	}
+
+	/**
+	 * PNGをバイト列化したものを取得します
+	 */
 	public static byte[] get_image() {
 		return png.get();
 	}
@@ -463,9 +478,15 @@ public class WinampLike {
 	 */
 	private static void write_image() {
 		try {
+			//RAW
+			byte[] raw_data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+			raw.set(raw_data);
+
+			//PNG
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(img, "png", baos);
 			png.set(baos.toByteArray());
+
 			baos.close();
 		} catch (IOException ex) {
 			ex.printStackTrace();

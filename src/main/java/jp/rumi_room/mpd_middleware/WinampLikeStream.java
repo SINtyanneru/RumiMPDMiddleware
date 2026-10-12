@@ -23,18 +23,18 @@ public class WinampLikeStream {
 
 	public static void init() throws IOException {
 		ProcessBuilder pb = new ProcessBuilder(
-		"/usr/bin/ffmpeg", "-hide_banner", "-loglevel", "info",
-		"-analyzeduration", "0", "-probesize", "10M",
-		"-f", "image2pipe", "-framerate", "15", "-c:v", "png", "-i", "-",
-		"-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
-		"-r", "10", "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
-		"-g", "10", "-keyint_min", "10", "-sc_threshold", "0",
-		"-movflags", "frag_keyframe+empty_moov+default_base_moof",
-		"-flush_packets", "1",
-		"-f", "mp4", "pipe:1"
+			"/usr/bin/ffmpeg", "-hide_banner", "-loglevel", "warning",
+			"-fflags", "nobuffer", "-flags", "low_delay",
+			"-f", "rawvideo", "-pix_fmt", "bgr24", "-s", WinampLike.WIDTH + "x" + WinampLike.HEIGHT, "-framerate", String.valueOf(WinampLike.FPS), "-i", "-",
+			"-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
+			"-r", String.valueOf(WinampLike.FPS), "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+			"-g", String.valueOf(WinampLike.FPS), "-keyint_min", String.valueOf(WinampLike.FPS), "-sc_threshold", "0",
+			"-movflags", "frag_keyframe+empty_moov+default_base_moof",
+			"-flush_packets", "1",
+			"-f", "mp4", "pipe:1"
 		);
 
-		//pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+		pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
 		ffmpeg = pb.start();
 		ffmpeg_in = ffmpeg.getOutputStream();
@@ -81,7 +81,7 @@ public class WinampLikeStream {
 		new Thread(() -> {
 			while (!error_stop) {
 				try {
-					byte[] img = WinampLike.get_image();
+					byte[] img = WinampLike.get_raw_image();
 					if (img != null) {
 						ffmpeg_in.write(img);
 						ffmpeg_in.flush();
