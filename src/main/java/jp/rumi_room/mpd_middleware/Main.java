@@ -17,6 +17,8 @@ public class Main {
 			}
 		}).start();
 
+		WinampLikeStream.init();
+
 		new Thread(new Runnable() {
 			@Override
 			public void run() {

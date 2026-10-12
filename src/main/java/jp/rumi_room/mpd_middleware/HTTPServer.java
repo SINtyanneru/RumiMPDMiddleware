@@ -60,7 +60,7 @@ public class HTTPServer {
 			}
 		});
 
-		app.get("/winamp", new Handler() {
+		app.get("/winamp.png", new Handler() {
 			@Override
 			public void handle(Context ctx) throws Exception {
 				ctx.status(200);
@@ -72,6 +72,14 @@ public class HTTPServer {
 				ctx.result(WinampLike.get_image());
 			}
 		});
+
+		app.get("/winamp.mp4", new Handler() {
+			@Override
+			public void handle(Context ctx) throws Exception {
+				WinampLikeStream.httpserver_endpoint(ctx);
+			}
+		});
+
 
 		app.start("0.0.0.0", 6601);
 	}
