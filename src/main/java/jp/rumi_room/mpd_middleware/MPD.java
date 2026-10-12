@@ -12,7 +12,7 @@ public class MPD {
 	private final static String MPD_HOST = "192.168.100.120";
 	private final static int MPD_PORT = 6600;
 	private final static String CRLF = "\n";
-	private final static int IDLE_TIMEOUT = 500;					//500ms
+	private final static int IDLE_TIMEOUT = 100;					//500ms
 	private final static int REPLY_TIMEOUT = 5000;					//5秒
 	private final static int CONNECT_RETRY_SEC = 10000;				//10秒
 
