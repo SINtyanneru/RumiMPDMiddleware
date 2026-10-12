@@ -7,6 +7,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -18,6 +21,8 @@ import jp.rumi_room.mpd_middleware.Type.MPDState;
 import su.rumishistem.rumi_java_logger.SeverityLevel;
 
 public class WinampLike {
+	private final static int FPS = 15;
+
 	private static AtomicReference<byte[]> png = new AtomicReference<>(new byte[0]);
 	private static BufferedImage img;
 	private static Graphics2D g;
@@ -74,66 +79,20 @@ public class WinampLike {
 			return;
 		}
 
-		while (true) {
-			int volume = MPD.get_mpd_volume();
-			boolean stereo = MPD.get_mpd_stereo();
-			double elapse = MPD.get_mpd_song_elapsed();
-			double duration = MPD.get_mpd_song_duration();
-			MPDState state = MPD.get_mpd_state();
-			int bitrate = MPD.get_mpd_bitrate();
-			int sps = MPD.get_mpd_sps();
+		//定数FPS通りに再描画する
+		ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+		ses.scheduleAtFixedRate(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					draw();
 
-			//ベース
-			g.drawImage(theme_main, 0, 0, null);
-
-			//再生ボタン類を描画
-			draw_control_button();
-
-			//シャッフルボタン
-			draw_shuffre();
-
-			//リピートボタン
-			draw_repeat();
-
-			//ボリューム
-			draw_volume(volume);
-
-			//パン
-			draw_pan();
-
-			//モノラルステレオ
-			draw_monoste(state, stereo);
-
-			//再生中か一時停止中のみ表示する物
-			if (state == MPDState.Play || state == MPDState.Pause) {
-				//シークバー
-				draw_seekbar(duration, elapse);
-
-				//再生時間
-				draw_playtime(elapse, state);
-
-				//ビットレート
-				draw_bitrate(bitrate);
-
-				//サンプリングレート
-				draw_sps(sps);
-
-				//タイトル
-				draw_title(MPD.get_mpd_song_artist() + " - " + MPD.get_mpd_song_title());
+					write_image();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
-
-			//再生状態表示
-			draw_state(state);
-
-			write_image();
-
-			//1秒後に再開
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				return;
-			}
-		}
+		}, 0, TimeUnit.SECONDS.toNanos(1) / FPS, TimeUnit.NANOSECONDS);
 	}
 
 	public static byte[] get_image() {
@@ -204,6 +163,62 @@ public class WinampLike {
 		} finally {
 			zis.close();
 		}
+	}
+
+	/**
+	 * 描画処理
+	 * (画像化はしない、ただキャンバスに描画するだけ)
+	 */
+	private static void draw() {
+		int volume = MPD.get_mpd_volume();
+		boolean stereo = MPD.get_mpd_stereo();
+		double elapse = MPD.get_mpd_song_elapsed();
+		double duration = MPD.get_mpd_song_duration();
+		MPDState state = MPD.get_mpd_state();
+		int bitrate = MPD.get_mpd_bitrate();
+		int sps = MPD.get_mpd_sps();
+
+		//ベース
+		g.drawImage(theme_main, 0, 0, null);
+
+		//再生ボタン類を描画
+		draw_control_button();
+
+		//シャッフルボタン
+		draw_shuffre();
+
+		//リピートボタン
+		draw_repeat();
+
+		//ボリューム
+		draw_volume(volume);
+
+		//パン
+		draw_pan();
+
+		//モノラルステレオ
+		draw_monoste(state, stereo);
+
+		//再生中か一時停止中のみ表示する物
+		if (state == MPDState.Play || state == MPDState.Pause) {
+			//シークバー
+			draw_seekbar(duration, elapse);
+
+			//再生時間
+			draw_playtime(elapse, state);
+
+			//ビットレート
+			draw_bitrate(bitrate);
+
+			//サンプリングレート
+			draw_sps(sps);
+
+			//タイトル
+			draw_title(MPD.get_mpd_song_artist() + " - " + MPD.get_mpd_song_title());
+		}
+
+		//再生状態表示
+		draw_state(state);
 	}
 
 	private static void draw_image_crop(BufferedImage src, int sx, int sy, int sw, int sh, int dx, int dy) {
