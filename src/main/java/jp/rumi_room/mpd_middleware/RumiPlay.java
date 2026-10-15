@@ -43,17 +43,17 @@ public class RumiPlay {
 			ex.printStackTrace();
 		}
 
-		// try {
-		// 	post_fluxer(post_text);
-		// } catch (Exception ex) {
-		// 	ex.printStackTrace();
-		// }
+		try {
+			post_fluxer(post_text);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 
-		// try {
-		// 	change_fluxer_status(artist + " - " + title);
-		// } catch (Exception ex) {
-		// 	ex.printStackTrace();
-		// }
+		try {
+			change_fluxer_status(artist + " - " + title);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private static void post_misskey(String text) throws IOException, InterruptedException {
@@ -76,38 +76,36 @@ public class RumiPlay {
 		/*HttpResponse<String> response = */hc.send(request, HttpResponse.BodyHandlers.ofString());
 	}
 
-	// private static void post_fluxer(String text) throws IOException, InterruptedException {
-	// 	Map<String, Object> post_body = new HashMap<>();
-	// 	post_body.put("text", text);
-	// 	post_body.put("flags", 0);
-	// 	post_body.put("nonce", "45451919");
-	// 	String json = new ObjectMapper().writeValueAsString(post_body);
+	private static void post_fluxer(String text) throws IOException, InterruptedException {
+		Map<String, Object> post_body = new HashMap<>();
+		post_body.put("content", text);
+		String json = new ObjectMapper().writeValueAsString(post_body);
 
-	// 	HttpRequest.Builder builder = HttpRequest.newBuilder();
-	// 	builder.uri(URI.create("https://web.fluxer.app/api/v1/channels/" + Config.Fluxer.ChannelID + "/messages"));
-	// 	builder.header("Content-Type", "application/json; charset=UTF-8");
-	// 	builder.header("Authorization", Config.Fluxer.Token);
-	// 	builder.POST(HttpRequest.BodyPublishers.ofString(json));
+		HttpRequest.Builder builder = HttpRequest.newBuilder();
+		builder.uri(URI.create("https://api.fluxer.app/v1/channels/" + Config.Fluxer.ChannelID + "/messages"));
+		builder.header("Content-Type", "application/json; charset=UTF-8");
+		builder.header("Authorization", Config.Fluxer.Token);
+		builder.POST(HttpRequest.BodyPublishers.ofString(json));
 
-	// 	HttpRequest request = builder.build();
-	// 	/*HttpResponse<String> response = */hc.send(request, HttpResponse.BodyHandlers.ofString());
-	// }
+		HttpRequest request = builder.build();
+		/*HttpResponse<String> response = */hc.send(request, HttpResponse.BodyHandlers.ofString());
+	}
 
-	// private static void change_fluxer_status(String text) throws IOException, InterruptedException {
-	// 	Map<String, Object> post_body = new HashMap<>();
-	// 	post_body.put("custom_status", new HashMap<>(){{
-	// 		put("text", text);
-	// 		put("expires_at", null);
-	// 	}});
-	// 	String json = new ObjectMapper().writeValueAsString(post_body);
+	private static void change_fluxer_status(String text) throws IOException, InterruptedException {
+		Map<String, Object> post_body = new HashMap<>();
+		post_body.put("custom_status", new HashMap<>(){{
+			put("text", text);
+			put("expires_at", null);
+		}});
+		String json = new ObjectMapper().writeValueAsString(post_body);
 
-	// 	HttpRequest.Builder builder = HttpRequest.newBuilder();
-	// 	builder.uri(URI.create("https://web.fluxer.app/api/v1/users/@me/settings"));
-	// 	builder.header("Content-Type", "application/json; charset=UTF-8");
-	// 	builder.header("Authorization", Config.Fluxer.Token);
-	// 	builder.method("PATCH", HttpRequest.BodyPublishers.ofString(json));
+		HttpRequest.Builder builder = HttpRequest.newBuilder();
+		builder.uri(URI.create("https://api.fluxer.app/v1/users/@me/settings"));
+		builder.header("Content-Type", "application/json; charset=UTF-8");
+		builder.header("Authorization", Config.Fluxer.Token);
+		builder.method("PATCH", HttpRequest.BodyPublishers.ofString(json));
 
-	// 	HttpRequest request = builder.build();
-	// 	/*HttpResponse<String> response = */hc.send(request, HttpResponse.BodyHandlers.ofString());
-	// }
+		HttpRequest request = builder.build();
+		/*HttpResponse<String> response = */hc.send(request, HttpResponse.BodyHandlers.ofString());
+	}
 }
