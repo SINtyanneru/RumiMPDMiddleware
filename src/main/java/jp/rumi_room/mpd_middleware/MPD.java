@@ -186,6 +186,8 @@ public class MPD {
 			if (read_line.equals("OK")) break;
 			parse_song_response(read_line);
 		}
+
+		RumiPlay.mpd_update(mpd_song_artist.get(), mpd_song_title.get());
 	}
 
 	/**
