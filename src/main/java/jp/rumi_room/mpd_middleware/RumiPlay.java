@@ -38,7 +38,7 @@ public class RumiPlay {
 		String post_text = "#るみぷれ\n" + artist + " - " + title;
 
 		try {
-			post_misskey(post_text);
+			//post_misskey(post_text);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
