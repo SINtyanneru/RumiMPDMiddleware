@@ -34,8 +34,6 @@ public class WinampLikeStream {
 			"-f", "mp4", "pipe:1"
 		);
 
-		//pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
 		ffmpeg = pb.start();
 		ffmpeg_in = ffmpeg.getOutputStream();
 
