@@ -81,6 +81,6 @@ public class HTTPServer {
 		});
 
 
-		app.start("0.0.0.0", 6601);
+		app.start("0.0.0.0", Config.HTTP.Port);
 	}
 }

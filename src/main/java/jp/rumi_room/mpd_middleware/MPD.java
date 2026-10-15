@@ -9,8 +9,6 @@ import jp.rumi_room.mpd_middleware.Type.MPDState;
 import su.rumishistem.rumi_java_logger.SeverityLevel;
 
 public class MPD {
-	private final static String MPD_HOST = "192.168.100.120";
-	private final static int MPD_PORT = 6600;
 	private final static String CRLF = "\n";
 	private final static int IDLE_TIMEOUT = 100;					//500ms
 	private final static int REPLY_TIMEOUT = 5000;					//5秒
@@ -38,7 +36,7 @@ public class MPD {
 		while (true) {
 			try {
 				socket = Optional.of(new Socket());
-				socket.get().connect(new InetSocketAddress(MPD_HOST, MPD_PORT));
+				socket.get().connect(new InetSocketAddress(Config.MPD.Host, Config.MPD.Port));
 
 				in = Optional.of(new BufferedReader(new InputStreamReader(socket.get().getInputStream(), StandardCharsets.UTF_8)));
 				out = Optional.of(new BufferedWriter(new OutputStreamWriter(socket.get().getOutputStream(), StandardCharsets.UTF_8)));
@@ -50,7 +48,7 @@ public class MPD {
 					throw new IOException("MPDサーバーではありません");
 				}
 
-				Main.logger.print(SeverityLevel.Ok, "MPDｻｰﾊﾞｰ("+MPD_HOST + ":" + MPD_PORT +")へ接続しました！");
+				Main.logger.print(SeverityLevel.Ok, "MPDｻｰﾊﾞｰ("+Config.MPD.Host + ":" + Config.MPD.Port +")へ接続しました！");
 
 				sync();
 
@@ -95,7 +93,7 @@ public class MPD {
 				in = Optional.empty();
 				out = Optional.empty();
 
-				Main.logger.print(SeverityLevel.Error, "MPDｻｰﾊﾞｰ("+MPD_HOST + ":" + MPD_PORT +")へ接続できません、再試行します。");
+				Main.logger.print(SeverityLevel.Error, "MPDｻｰﾊﾞｰ("+Config.MPD.Host + ":" + Config.MPD.Port +")へ接続できません、再試行します。");
 
 				try {
 					Thread.sleep(CONNECT_RETRY_SEC);
