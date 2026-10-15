@@ -26,6 +26,7 @@ public class Config {
 	public static class Fluxer {
 		public static String Host = null;
 		public static String Token = null;
+		public static String ChannelID = null;
 	}
 
 	public static void load() throws IOException {
@@ -61,7 +62,7 @@ public class Config {
 		}
 
 		MPD.Host = (String)config.get("MPD.HOST");
-		MPD.Port = (int)config.get("MPD.HOST");
+		MPD.Port = (int)config.get("MPD.PORT");
 
 		HTTP.Port = (int)config.get("HTTP.PORT");
 
@@ -72,5 +73,6 @@ public class Config {
 
 		Fluxer.Host = (String)config.get("FLUXER.HOST");
 		Fluxer.Token = (String)config.get("FLUXER.TOKEN");
+		Fluxer.ChannelID = (String)config.get("FLUXER.CHANNNEL_ID");
 	}
 }

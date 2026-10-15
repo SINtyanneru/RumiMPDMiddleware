@@ -10,6 +10,8 @@ public class Main {
 		logger = new RumiJavaLogger();
 		logger.hijack_std(SeverityLevel.Debug);
 
+		Config.load();
+
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
