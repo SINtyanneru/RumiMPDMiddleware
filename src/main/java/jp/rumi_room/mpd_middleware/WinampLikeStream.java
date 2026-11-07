@@ -1,9 +1,11 @@
 package jp.rumi_room.mpd_middleware;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import io.javalin.http.Context;
+import su.rumishistem.rumi_java_logger.SeverityLevel;
 
 public class WinampLikeStream {
 	private static byte[] initial_segment = null;
@@ -20,6 +23,9 @@ public class WinampLikeStream {
 	private static Process ffmpeg = null;
 	private static OutputStream ffmpeg_in = null;
 	private static boolean error_stop = false;
+
+	//1回の視聴接続の最長寿命（これを超えたら切断し、クライアントの再接続に任せる）
+	private static final long SESSION_MAX_MS = 10 * 60 * 1000;
 
 	public static void init() throws IOException {
 		ProcessBuilder pb = new ProcessBuilder(
@@ -36,6 +42,23 @@ public class WinampLikeStream {
 
 		ffmpeg = pb.start();
 		ffmpeg_in = ffmpeg.getOutputStream();
+
+		//ffmpegの標準エラー出力を読み続けるスレッド
+		//誰も読まないとパイプが満杯になり、ffmpegが警告を書き込めずに停止してしまう
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					BufferedReader br = new BufferedReader(new InputStreamReader(ffmpeg.getErrorStream(), StandardCharsets.UTF_8));
+					String line;
+					while ((line = br.readLine()) != null) {
+						Main.logger.print(SeverityLevel.Debug, "ffmpeg: " + line);
+					}
+				} catch (Exception ex) {
+					//ffmpegが終了したらこちらも終わる
+				}
+			}
+		}).start();
 
 		new Thread(new Runnable() {
 			@Override
@@ -94,13 +117,24 @@ public class WinampLikeStream {
 	}
 
 	public static void httpserver_endpoint(Context ctx) {
+		//無いだろうが、初期化セグメントが来るまで待ってもらう（ただし最大5秒まで）
+		//ffmpegが死んでいる場合に無限に待つと、リクエストのたびにスレッドが
+		//駐車し続けるので、来なければ503を返してスレッドを解放する
+		try {
+			for (int i = 0; i < 100 && initial_segment == null; i++) Thread.sleep(50);
+		} catch (Exception e) {
+			return;
+		}
+		if (initial_segment == null) {
+			ctx.status(503);
+			ctx.result("stream is not ready");
+			return;
+		}
+
 		BlockingQueue<byte[]> queue = new LinkedBlockingQueue<>(32);
 		client_list.add(queue);
 
 		try {
-			//無いだろうが、初期化セグメントが来るまで待ってもらう
-			while (initial_segment == null) Thread.sleep(50);
-
 			//ヘッダー
 			ctx.contentType("video/mp4");
 			ctx.header("Accept-Ranges", "none");
@@ -121,7 +155,11 @@ public class WinampLikeStream {
 			out.flush();
 
 			//キューを処理
+			//接続の寿命に上限を設け、応答のないまま残った接続が
+			//スレッドを占有し続けないようにする（クライアントは再接続してくる）
+			long session_limit = System.currentTimeMillis() + SESSION_MAX_MS;
 			while (client_list.contains(queue)) {
+				if (System.currentTimeMillis() >= session_limit) break;
 				byte[] data = queue.poll(1, java.util.concurrent.TimeUnit.SECONDS);
 				if (data == null) continue;
 				out.write(data);

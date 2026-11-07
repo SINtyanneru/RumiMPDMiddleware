@@ -8,12 +8,24 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import io.javalin.Javalin;
 import io.javalin.http.*;
 import jp.rumi_room.mpd_middleware.Type.MPDState;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.ServerConnector;
 
 public class HTTPServer {
 	private static XmlMapper xml = new XmlMapper();
 
 	public static void init() {
-		Javalin app = Javalin.create();
+		Javalin app = Javalin.create(config -> {
+			//読み書きが進まないまま残った接続をJetty側で切断できるように、
+			//コネクタのアイドルタイムアウトを設定する
+			config.jetty.modifyServer(server -> {
+				for (Connector connector : server.getConnectors()) {
+					if (connector instanceof ServerConnector) {
+						((ServerConnector) connector).setIdleTimeout(60000);
+					}
+				}
+			});
+		});
 
 		app.get("/", new Handler() {
 			@Override
