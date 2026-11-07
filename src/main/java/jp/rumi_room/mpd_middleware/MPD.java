@@ -83,15 +83,7 @@ public class MPD {
 			} catch (IOException ex) {
 				ex.printStackTrace();
 
-				try {
-					socket.get().close();
-				} catch (Exception e) {
-				}
-
-
-				socket = Optional.empty();
-				in = Optional.empty();
-				out = Optional.empty();
+				close_connection();
 
 				Main.logger.print(SeverityLevel.Error, "MPDｻｰﾊﾞｰ("+Config.MPD.Host + ":" + Config.MPD.Port +")へ接続できません、再試行します。");
 
@@ -102,8 +94,34 @@ public class MPD {
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
+
+				//IOException以外の例外でも、ソケットを閉じずに即再接続し続けると
+				//接続が溜まっていくので、IOException時と同じ後始末と待機をする
+				close_connection();
+
+				Main.logger.print(SeverityLevel.Error, "MPDｻｰﾊﾞｰ("+Config.MPD.Host + ":" + Config.MPD.Port +")との通信でエラーが発生しました、再試行します。");
+
+				try {
+					Thread.sleep(CONNECT_RETRY_SEC);
+				} catch (InterruptedException e) {
+					return;
+				}
 			}
 		}
+	}
+
+	/**
+	 * MPDとの接続を閉じて、保持しているストリームを破棄する
+	 */
+	private static void close_connection() {
+		try {
+			if (socket.isPresent()) socket.get().close();
+		} catch (Exception e) {
+		}
+
+		socket = Optional.empty();
+		in = Optional.empty();
+		out = Optional.empty();
 	}
 
 	public static MPDState get_mpd_state() {
